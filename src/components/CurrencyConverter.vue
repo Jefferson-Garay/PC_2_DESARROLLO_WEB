@@ -12,12 +12,16 @@
         class="q-mb-md"
       />
 
-      <!-- Selects de moneda + botón swap -->
+      <!-- Selects y botón de swap -->
       <div class="row items-center q-gutter-md q-mb-md">
         <q-select
           v-model="from"
           :options="currencyOptions"
           label="Desde"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
           outlined
           class="col"
         />
@@ -31,28 +35,39 @@
           v-model="to"
           :options="currencyOptions"
           label="Hacia"
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
           outlined
           class="col"
         />
+      </div>
+
+      <!-- Botón de conversión -->
+      <q-btn label="Convertir" color="primary" @click="convertCurrency" class="q-mb-md" />
+
+      <!-- Resultado -->
+      <div v-if="result !== null" class="q-mt-md text-center text-subtitle1">
+        <strong>{{ amount }} {{ from }}</strong> equivalen a
+        <strong>{{ result }} {{ to }}</strong>
       </div>
     </q-card>
   </div>
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'CurrencyConverter',
   data() {
     return {
-      amount: null,     // vacía
-      from: null,       // vacía
-      to: null,         // vacía
-      currencyOptions: [
-        { label: 'Dólar (USD)', value: 'USD' },
-        { label: 'Euro (EUR)', value: 'EUR' },
-        { label: 'Yen (JPY)', value: 'JPY' },
-        { label: 'Libra (GBP)', value: 'GBP' }
-      ]
+      amount: null,
+      from: null,
+      to: null,
+      result: null,
+      currencyOptions: []
     }
   },
   methods: {
@@ -60,7 +75,54 @@ export default {
       const temp = this.from
       this.from = this.to
       this.to = temp
+    },
+    async loadCurrencies() {
+      try {
+        const res = await axios.get('https://api.frankfurter.app/currencies')
+        this.currencyOptions = Object.entries(res.data).map(([code, name]) => ({
+          label: `${name} (${code})`,
+          value: code
+        }))
+      } catch (error) {
+        console.error('Error cargando monedas:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'No se pudo cargar la lista de monedas.'
+        })
+      }
+    },
+    async convertCurrency() {
+      if (!this.amount || this.amount <= 0) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ingresa un monto válido mayor que 0.'
+        })
+        return
+      }
+
+      if (!this.from || !this.to) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Selecciona ambas monedas.'
+        })
+        return
+      }
+
+      try {
+        const url = `https://api.frankfurter.app/latest?amount=${this.amount}&from=${this.from}&to=${this.to}`
+        const res = await axios.get(url)
+        this.result = res.data.rates[this.to]
+      } catch (error) {
+        console.error('Error en la conversión:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ocurrió un error al convertir.'
+        })
+      }
     }
+  },
+  mounted() {
+    this.loadCurrencies()
   }
 }
 </script>
