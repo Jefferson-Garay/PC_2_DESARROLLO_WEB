@@ -3,7 +3,7 @@
     <q-card flat bordered class="q-pa-lg">
       <div class="text-h5 text-center q-mb-md">💱 Conversión de Monedas</div>
 
-      <!-- Campo para ingresar monto -->
+      <!-- Campo de monto -->
       <q-input
         v-model.number="amount"
         label="Monto a convertir"
@@ -11,6 +11,24 @@
         outlined
         class="q-mb-md"
       />
+
+      <!-- Selects de moneda -->
+      <div class="row q-gutter-md q-mb-md">
+        <q-select
+          v-model="from"
+          :options="currencyOptions"
+          label="Desde"
+          outlined
+          class="col"
+        />
+        <q-select
+          v-model="to"
+          :options="currencyOptions"
+          label="Hacia"
+          outlined
+          class="col"
+        />
+      </div>
     </q-card>
   </div>
 </template>
@@ -20,7 +38,15 @@ export default {
   name: 'CurrencyConverter',
   data() {
     return {
-      amount: null
+      amount: null,
+      from: null,
+      to: null,
+      currencyOptions: [
+        { label: 'Dólar (USD)', value: 'USD' },
+        { label: 'Euro (EUR)', value: 'EUR' },
+        { label: 'Yen (JPY)', value: 'JPY' },
+        { label: 'Libra (GBP)', value: 'GBP' }
+      ]
     }
   }
 }
