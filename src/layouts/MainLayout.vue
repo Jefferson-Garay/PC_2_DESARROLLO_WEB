@@ -25,17 +25,27 @@
       bordered
     >
       <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
+        <q-item-label header>
+          Navegación
         </q-item-label>
 
-        <EssentialLink
+        <q-item
           v-for="link in linksList"
           :key="link.title"
-          v-bind="link"
-        />
+          clickable
+          :to="isInternal(link.link) ? link.link : undefined"
+          :href="!isInternal(link.link) ? link.link : undefined"
+          target="_blank"
+          rel="noopener"
+        >
+          <q-item-section avatar>
+            <q-icon :name="link.icon" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ link.title }}</q-item-label>
+            <q-item-label caption>{{ link.caption }}</q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -47,9 +57,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
 
 const linksList = [
+  {
+    title: 'Conversor',
+    caption: 'Cambio de monedas',
+    icon: 'paid',
+    link: '/converter'  // Ruta interna que creaste
+  },
   {
     title: 'Docs',
     caption: 'quasar.dev',
@@ -98,5 +113,9 @@ const leftDrawerOpen = ref(false)
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+function isInternal(link) {
+  return link.startsWith('/')
 }
 </script>
