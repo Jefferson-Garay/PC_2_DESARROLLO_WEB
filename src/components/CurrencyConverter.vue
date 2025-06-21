@@ -3,126 +3,131 @@
     <q-card flat bordered class="q-pa-lg">
       <div class="text-h5 text-center q-mb-md">💱 Conversión de Monedas</div>
 
-      <!-- Campo de monto -->
-      <q-input
-        v-model.number="amount"
-        label="Monto a convertir"
-        type="number"
-        outlined
-        class="q-mb-md"
-      />
-
-      <!-- Selects y botón de swap -->
-      <div class="row items-center q-gutter-md q-mb-md">
-        <q-select
-          v-model="from"
-          :options="currencyOptions"
-          label="Desde"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
+      <q-form @submit.prevent="convertCurrency" ref="form">
+        <!-- Campo de Monto -->
+        <q-input
+          v-model="amount"
+          label="Monto a convertir"
           outlined
-          class="col"
+          class="q-mb-md"
+          :rules="[val => val !== '' && !isNaN(val) && Number(val) > 0 || 'Monto inválido']"
         />
-        <q-btn
-          icon="swap_horiz"
-          round
-          flat
-          @click="swapCurrencies"
-        />
-        <q-select
-          v-model="to"
-          :options="currencyOptions"
-          label="Hacia"
-          option-label="label"
-          option-value="value"
-          emit-value
-          map-options
-          outlined
-          class="col"
-        />
-      </div>
 
-      <!-- Botón de conversión -->
-      <q-btn label="Convertir" color="primary" @click="convertCurrency" class="q-mb-md" />
+        <!-- Selectores de Moneda -->
+        <div class="row q-gutter-md q-mb-md">
+          <q-select
+            v-model="from"
+            :options="currencyOptions"
+            label="Desde"
+            emit-value
+            map-options
+            outlined
+            class="col"
+            :rules="[val => !!val || 'Seleccione moneda de origen']"
+          />
+          <q-btn icon="swap_horiz" round flat @click="swapCurrencies" />
+          <q-select
+            v-model="to"
+            :options="currencyOptions"
+            label="Hacia"
+            emit-value
+            map-options
+            outlined
+            class="col"
+            :rules="[val => !!val || 'Seleccione moneda de destino']"
+          />
+        </div>
 
-      <!-- Resultado -->
-      <div v-if="result !== null" class="q-mt-md text-center text-subtitle1">
-        <strong>{{ amount }} {{ from }}</strong> equivalen a
-        <strong>{{ result }} {{ to }}</strong>
-      </div>
+        <!-- Botón de Conversión -->
+        <q-btn label="Convertir" color="primary" type="submit" />
+
+        <!-- Resultado -->
+        <div v-if="result !== null" class="q-mt-md text-center text-subtitle1">
+          <strong>{{ amount }} {{ from }}</strong> equivalen a
+          <strong>{{ result }} {{ to }}</strong>
+        </div>
+      </q-form>
     </q-card>
   </div>
 </template>
 
 <script>
+import { ref } from 'vue'
 import axios from 'axios'
 
 export default {
   name: 'CurrencyConverter',
-  data() {
-    return {
-      amount: null,
-      from: null,
-      to: null,
-      result: null,
-      currencyOptions: []
-    }
-  },
-  methods: {
-    swapCurrencies() {
-      const temp = this.from
-      this.from = this.to
-      this.to = temp
-    },
-    async loadCurrencies() {
+  setup() {
+    const amount = ref('')
+    const from = ref(null)
+    const to = ref(null)
+    const result = ref(null)
+    const currencyOptions = ref([])
+    const form = ref(null)
+
+    const loadCurrencies = async () => {
       try {
         const res = await axios.get('https://api.frankfurter.app/currencies')
-        this.currencyOptions = Object.entries(res.data).map(([code, name]) => ({
+        currencyOptions.value = Object.entries(res.data).map(([code, name]) => ({
           label: `${name} (${code})`,
           value: code
         }))
       } catch (error) {
-        console.error('Error cargando monedas:', error)
+        console.error(error)
         this.$q.notify({
           type: 'negative',
-          message: 'No se pudo cargar la lista de monedas.'
+          message: 'No se pudieron cargar las monedas'
         })
       }
-    },
-    async convertCurrency() {
-      if (!this.amount || this.amount <= 0) {
+    }
+
+    const convertCurrency = async () => {
+      const isValid = await form.value.validate()
+      if (!isValid) {
         this.$q.notify({
           type: 'negative',
-          message: 'Ingresa un monto válido mayor que 0.'
+          message: 'Por favor complete todos los campos correctamente'
         })
         return
       }
 
-      if (!this.from || !this.to) {
-        this.$q.notify({
-          type: 'negative',
-          message: 'Selecciona ambas monedas.'
-        })
+      if (from.value === to.value) {
+        result.value = Number(amount.value)
         return
       }
 
       try {
-        const url = `https://api.frankfurter.app/latest?amount=${this.amount}&from=${this.from}&to=${this.to}`
+        const url = `https://api.frankfurter.app/latest?amount=${amount.value}&from=${from.value}&to=${to.value}`
         const res = await axios.get(url)
-        this.result = res.data.rates[this.to]
+        result.value = res.data.rates[to.value]
       } catch (error) {
-        console.error('Error en la conversión:', error)
+        console.error(error)
         this.$q.notify({
           type: 'negative',
-          message: 'Ocurrió un error al convertir.'
+          message: 'No se pudo realizar la conversión'
         })
       }
     }
-  },
-  mounted() {
-    this.loadCurrencies()
+
+    const swapCurrencies = () => {
+      const temp = from.value
+      from.value = to.value
+      to.value = temp
+      result.value = null
+    }
+
+    loadCurrencies()
+
+    return {
+      amount,
+      from,
+      to,
+      result,
+      currencyOptions,
+      form,
+      convertCurrency,
+      swapCurrencies
+    }
   }
 }
 </script>

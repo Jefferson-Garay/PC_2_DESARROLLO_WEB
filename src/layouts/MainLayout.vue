@@ -106,7 +106,13 @@ const linksList = [
     caption: 'Community Quasar projects',
     icon: 'favorite',
     link: 'https://awesome.quasar.dev'
-  }
+  },
+  {
+  title: 'Conversor',
+  caption: 'Cambio de monedas',
+  icon: 'paid',
+  link: '/converter'
+}
 ]
 
 const leftDrawerOpen = ref(false)
