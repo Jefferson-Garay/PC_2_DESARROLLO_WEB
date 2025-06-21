@@ -12,14 +12,20 @@
         class="q-mb-md"
       />
 
-      <!-- Selects de moneda -->
-      <div class="row q-gutter-md q-mb-md">
+      <!-- Selects de moneda + botón swap -->
+      <div class="row items-center q-gutter-md q-mb-md">
         <q-select
           v-model="from"
           :options="currencyOptions"
           label="Desde"
           outlined
           class="col"
+        />
+        <q-btn
+          icon="swap_horiz"
+          round
+          flat
+          @click="swapCurrencies"
         />
         <q-select
           v-model="to"
@@ -38,15 +44,22 @@ export default {
   name: 'CurrencyConverter',
   data() {
     return {
-      amount: null,
-      from: null,
-      to: null,
+      amount: null,     // vacía
+      from: null,       // vacía
+      to: null,         // vacía
       currencyOptions: [
         { label: 'Dólar (USD)', value: 'USD' },
         { label: 'Euro (EUR)', value: 'EUR' },
         { label: 'Yen (JPY)', value: 'JPY' },
         { label: 'Libra (GBP)', value: 'GBP' }
       ]
+    }
+  },
+  methods: {
+    swapCurrencies() {
+      const temp = this.from
+      this.from = this.to
+      this.to = temp
     }
   }
 }
